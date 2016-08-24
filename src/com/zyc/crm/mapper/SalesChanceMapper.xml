@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.SalesChanceMapper">
+
+	<insert id="insertIntoContacts">
+		insert into contacts(id,name,tel,customer_id)
+		values(crm_seq.nextval,#{contactName},#{contactTel},#{customerId})
+	</insert>
+
+	<!--通过customer表中的NO来获取id -->
+	<select id="getCustomerIdByNo" resultType="long">
+		select id from customers where no = #{uuid}
+	</select>
+
+	<!-- 完成销售计划后 向customers表中添加三个字段 -->
+	<insert id="insertIntoCustomers">
+		insert into customers (id,name,no,state)
+		values (crm_seq.nextval,#{custName},#{uuid},#{state})
+	</insert>
+
+	<!-- // 更新销售机会的状态-->
+	<update id="updateChanceStatus">
+		update sales_chances set status =#{status} where id =#{id} 
+	</update>
+
+	<!-- 更新指定时间和指定给谁 -->
+	<update id="updateDesigneeDateAndDesignee">
+		update sales_chances set designee_date =#{designeeDate},designee_id = #{designee.id},status = 2 where id=#{id}
+	</update>
+
+	<!-- //为了表单回显指派给谁。查询所有的user对象 -->
+	<select id="getAllUser" resultType="com.zyc.crm.bean.User">
+		select id,name from users
+	</select>
+
+	<!-- 通过创建人的id来查询创建人的信息 -->
+	<select id="getCreateBy" resultType="com.zyc.crm.bean.User">
+		select id,name from users where id=#{id}
+	</select>
+
+	<!-- 通过传入map来查询当前页面的List -->
+	<select id="getContentByMap" resultType="com.zyc.crm.bean.SalesChance">
+		select *
+		from (
+		select rownum
+		rn,id,cust_name,title,contact,contact_tel,create_date
+		from
+		sales_chances
+		<where>
+			created_user_id=#{createBy.id} and status=#{status}
+			<if test="custName!=null">
+				<![CDATA[
+				and cust_name like #{custName}
+				]]>
+			</if>
+			<if test="title!=null">
+				<![CDATA[
+				and title like #{title}
+				]]>
+			</if>
+			<if test="contact!=null">
+				<![CDATA[
+				and contact like #{contact}
+				]]>
+			</if>
+		</where>
+		) s
+		
+			<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+			]]>
+	</select>
+	<!-- 通过传入map来查询中的记录数 -->
+	<select id="getTotalElementsByMap" resultType="long">
+		select count(id)
+		from
+		sales_chances
+		<where>
+			created_user_id = #{createBy.id} and status = #{status}
+			<if test="custName!=null">
+				<![CDATA[
+				and cust_name like #{custName}
+				]]>
+			</if>
+			<if test="title!=null">
+				<![CDATA[
+				and title like #{title}
+				]]>
+			</if>
+			<if test="contact!=null">
+				<![CDATA[
+				and contact like #{contact}
+				]]>
+			</if>
+		</where>
+	</select>
+
+	<!-- 获取带查询条件的当前页面的集合 -->
+	<select id="getContentByQuery" resultType="com.zyc.crm.bean.SalesChance">
+		select *
+		from (
+		select rownum
+		rn,id,cust_name,title,contact,contact_tel,create_date
+		from
+		sales_chances
+		<where>
+			created_user_id=#{createBy.id} and status=#{status}
+			<if test="custName!=null">
+				<![CDATA[
+				and cust_name like #{custName}
+				]]>
+			</if>
+			<if test="title!=null">
+				<![CDATA[
+				and title like #{title}
+				]]>
+			</if>
+			<if test="contact!=null">
+				<![CDATA[
+				and contact like #{contact}
+				]]>
+			</if>
+		</where>
+		) s
+		
+			<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+			]]>
+
+	</select>
+
+	<!-- 获取带查询条件的总个数 -->
+	<select id="getTotalElementsByQuery" resultType="long">
+		select count(id)
+		from
+		sales_chances
+		<where>
+			created_user_id = #{createBy.id} and status = #{status}
+			<if test="custName!=null">
+				<![CDATA[
+				and cust_name like #{custName}
+				]]>
+			</if>
+			<if test="title!=null">
+				<![CDATA[
+				and title like #{title}
+				]]>
+			</if>
+			<if test="contact!=null">
+				<![CDATA[
+				and contact like #{contact}
+				]]>
+			</if>
+		</where>
+	</select>
+
+	<!-- 修改销售机会 -->
+	<update id="update">
+		update sales_chances set
+		cust_name=#{custName},title=#{title},contact=#{contact},contact_tel=#{contactTel},source=#{source},description=#{description},rate=#{rate}
+		where id=#{id}
+	</update>
+
+	<!-- 通过id来获取销售机会 -->
+	<select id="getChance" resultType="com.zyc.crm.bean.SalesChance">
+		select id, source, title,
+		cust_name, contact, contact_tel, rate, description, create_date,created_user_id as "createBy.id",designee_date,designee_id as "designee.id"
+		from
+		sales_chances
+		where id = #{id}
+	</select>
+
+
+	<!-- 删除销售机会 -->
+	<delete id="delete">
+		delete from sales_chances where id=#{id}
+	</delete>
+
+	<!-- 添加销售机会 -->
+	<insert id="save">
+		insert into
+		sales_chances(id,title,source,cust_name,contact,contact_tel,rate,description,
+		created_user_id,create_date,status)
+
+		values(crm_seq.nextval,#{title},#{source},#{custName},#{contact},#{contactTel},
+		#{rate},#{description},#{createBy.id},#{createDate},#{status})
+	</insert>
+
+	<!-- 获取当前分页的元素集合 -->
+	<select id="getContent" resultType="com.zyc.crm.bean.SalesChance">
+		select *
+		from (
+		select rownum
+		rn,id,cust_name,title,contact,contact_tel,create_date
+		from
+		sales_chances
+		where created_user_id=#{createBy.id} and status=#{status}
+		) s
+		<![CDATA[
+		where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+
+	<!-- 获取总记录数 -->
+	<select id="getTotalElements" resultType="long">
+		select count(id)
+		from
+		sales_chances
+		where created_user_id = #{createBy.id} and status =
+		#{status}
+	</select>
+</mapper>

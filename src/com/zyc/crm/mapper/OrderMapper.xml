@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.OrderMapper">
+
+	<select id="selectOrderItems" resultType="com.zyc.crm.bean.OrderItem">
+		select o.id,item_count as "count",o.money,product_id as "prodect.id",p.id,batch,memo,p.name as "product.name",price,type,unit as "product.unit"
+		from order_items o
+		left outer join products p
+		on o.product_id=p.id
+		where o.order_id=#{id}
+	</select>
+
+	<resultMap type="com.zyc.crm.bean.Order" id="orderMap">
+		<id column="id" property="id"/>
+		<id column="address" property="address"/>
+		<id column="order_date" property="date"/>
+		<id column="status" property="status"/>
+		<id column="customer_id" property="customer.id"/>
+		<collection property="items" ofType="com.zyc.crm.bean.OrderItem" column="id" select="selectOrderItems"></collection>
+	</resultMap>
+
+	<select id="getOrder" resultMap="orderMap">
+		select id,address,order_date,no,status,customer_id
+		from orders 
+		where id= #{id}
+	</select>
+
+	<select id="getTotalElements" resultType="long">
+		select count(*) from orders where customer_id=#{customerId}
+	</select>
+	
+	<select id="getContent" resultType="com.zyc.crm.bean.Order">
+		select * from (
+			select rownum rn,id,address,order_date as "date",no,status,customer_id as"customer.id"
+			from orders
+			where customer_id=#{customerId}
+		)s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+</mapper>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ReportMapper">
+
+	<select id="getTotalElements" resultType="long" >
+		select count(distinct c.id)
+		from customers c
+		inner join orders o
+		on c.id = o.customer_id
+		left outer join order_items oi 
+		on o.id = oi.order_id
+		left outer join products p
+		on oi.product_id = p.id
+		
+		<where>
+			<if test="custName != null and custName != ''">
+				and c.name LIKE #{custName}
+			</if>
+			<if test="minOrderDate != null and minOrderDate != ''">
+				and o.order_date > #{minOrderDate}
+			</if>
+			<if test="maxOrderDate != null and maxOrderDate != ''">
+				<![CDATA[
+					and o.order_date < #{maxOrderDate}
+				]]>
+			</if>
+		</where>
+	</select>
+	
+	<select id="getContent" resultType="java.util.Map">
+	
+	select * from (
+		select rownum rn, a.*
+		from (
+		select c.name as "name", sum(p.price * oi.item_count) as "totalMoney"
+		from customers c
+		inner join orders o
+		on c.id = o.customer_id
+		left outer join order_items oi 
+		on o.id = oi.order_id
+		left outer join products p
+		on oi.product_id = p.id
+		
+		<where>
+			<if test="custName != null and custName != ''">
+				c.name LIKE #{custName}
+			</if>
+			<if test="minOrderDate != null and minOrderDate != ''">
+				and o.order_date > #{minOrderDate}
+			</if>
+			<if test="maxOrderDate != null and maxOrderDate != ''">
+				<![CDATA[
+					and o.order_date < #{maxOrderDate}
+				]]>
+			</if>
+		</where>
+		group by c.name
+		
+		)a
+	)aa
+	<![CDATA[
+	 where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+
+	<!-- <select id="getContent" resultType="java.util.Map">
+	
+		select rownum,s.* from (
+		SELECT c.name AS "name",
+		sum(p.price * oi.item_count) AS "totalMoney"
+		FROM customers c
+		INNER JOIN orders o
+		ON o.customer_id = c.id
+		LEFT OUTER JOIN order_items oi
+		ON o.id = oi.order_id
+		LEFT OUTER JOIN products p
+		ON p.id = oi.product_id
+		<where>
+			<if test="name!=null">
+			<![CDATA[
+				c.name like #{name}
+				]]>
+			</if>
+		</where>
+		GROUP BY c.name
+		) s
+		<![CDATA[
+			where rownum>=#{fromIndex} and rownum<#{endIndex}
+		]]>
+	</select>
+
+	<select id="getTotalElements" resultType="long">
+		SELECT COUNT(DISTINCT
+		c.id)
+		FROM customers c
+		INNER JOIN orders o
+		ON
+		o.customer_id = c.id
+		LEFT OUTER JOIN order_items oi
+		ON o.id =
+		oi.order_id
+		LEFT OUTER JOIN products p
+		ON p.id = oi.product_id
+		<where>
+			<if test="name!=null">
+			<![CDATA[
+				c.name like #{name}
+				]]>
+			</if>
+		</where>
+	</select> -->
+
+
+	<select id="selectOrderItems" resultType="com.zyc.crm.bean.OrderItem">
+		select money
+		from
+		order_items
+		where order_id = #{id}
+	</select>
+
+	<resultMap type="com.zyc.crm.bean.Order" id="orderMap">
+		<id column="id" property="id" />
+
+		<collection property="items" ofType="com.zyc.crm.bean.OrderItem"
+			column="id" select="selectOrderItems">
+		</collection>
+	</resultMap>
+
+	<select id="selectOrder" resultMap="orderMap">
+		select id
+		from orders
+		where customer_id = #{id}
+		<!-- select c.name,oi.money from customers c join orders o on o.customer_id 
+			= c.id left outer join order_items oi on oi.order_id = o.id -->
+	</select>
+
+	<resultMap type="com.zyc.crm.bean.Customer" id="customerMap">
+		<id column="id" property="id" />
+		<result column="name" property="name" />
+		<collection property="orders" column="id"
+			ofType="com.zyc.crm.bean.Order" select="selectOrder"></collection>
+	</resultMap>
+
+	<select id="getCustomer" resultMap="customerMap">
+		select id,name
+		from customers
+	</select>
+	
+	
+	
+</mapper>

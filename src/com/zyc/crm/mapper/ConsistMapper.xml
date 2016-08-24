@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ConsistMapper">
+
+	<select id="getTotalElements" resultType="long">
+	select count(item)
+    from dicts 
+    where type = #{type}
+	</select>
+
+	<select id="getContent" resultType="java.lang.Object">
+	select * from(
+	select rownum rn,s.* from (
+	select item,count(c.id)
+		from dicts 
+		left outer join customers c
+		on customer_level = item
+		where type = #{type}
+		group by item
+	)s
+	)ss
+		 
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+</mapper>

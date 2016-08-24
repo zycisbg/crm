@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ContactMapper">
+
+	<!-- 删除联系人 -->
+	<delete id="detele">
+		delete from contacts where id=#{contactId}
+	</delete>
+
+	<!-- 更新contact对象 -->
+	<update id="update">
+		update contacts set memo=#{memo},mobile=#{mobile},name=#{name},position=#{position},sex=#{sex},tel=#{tel}
+		where id=#{id}
+	</update>
+
+	<!-- 通过id来获取contact对象 -->
+	<select id="getContactById" resultType="com.zyc.crm.bean.Contact">
+		select id,memo,mobile,name,position,sex,tel,customer_id as "customer.id"
+		from contacts
+		where id=#{id}
+	</select>
+
+	<!-- 添加联系人 -->
+	<insert id="save">
+		insert into contacts (id,memo,mobile,name,position,sex,tel,customer_id)
+		values(crm_seq.nextval,#{memo},#{mobile},#{name},#{position},#{sex},#{tel},#{customer.id})
+	</insert>
+	
+	<select id="getManager" resultType="com.zyc.crm.bean.Customer">
+		select id,no,name from customers where id=#{id}
+	</select>
+
+	<select id="getContent" resultType="com.zyc.crm.bean.Contact">
+		select * from (
+		select rownum rn, cont.id,cont.memo,cont.mobile,cont.name,cont.position,cont.sex,cont.tel,cont.customer_id as "customer.id",cust.no as "customer.no",cust.name as "customer.name"
+		from contacts cont
+		left outer join customers cust
+		on cont.customer_id = cust.id
+		where customer_id=#{id}
+		) s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+			]]>
+	</select>
+	<select id="getTotalElements" resultType="long">
+		select count(*) from contacts where customer_id=#{id}
+	</select>
+</mapper>

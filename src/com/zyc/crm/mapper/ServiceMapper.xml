@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ServiceMapper">
+
+
+	<update id="updateFeedbacke">
+		update customer_services set deal_result=#{dealResult},satisfy=#{satisfy},service_state='已归档'
+		where id = #{id}
+	</update>
+
+	<update id="updateDeal">
+		update customer_services set service_deal = #{serviceDeal},deal_date = #{dealDate},service_state='已处理'
+		where id = #{id}
+	</update>
+
+
+	<select id="getServiceById" resultType="com.zyc.crm.bean.CustomerService">
+		select
+		cs.id,cs.allot_date as
+		"allotDate",cs.service_type,cs.service_title,cs.create_date as
+		"createDate",cs.deal_date,cs.deal_result,cs.satisfy,cs.service_deal,cs.service_request,cs.service_state,cs.allot_id
+		as "allotTo.id",cs.created_id as "createdby.id",cs.customer_id as
+		"customer.id",c.name as "customer.name",u.name as
+		"createdby.name",u2.name as "allotTo.name"
+		from customer_services cs
+		left outer join
+		customers c
+		on cs.customer_id =
+		c.id
+		left outer join users
+		u
+		on cs.created_id = u.id
+		left outer join users u2
+		on cs.allot_id = u2.id
+		where cs.id=#{id}
+	</select>
+
+	<update id="allot">
+		update customer_services set allot_date =#{date},
+		allot_id=#{allotId},service_state='已分配' where id=#{serviceId}
+	</update>
+
+	<delete id="delete">
+		delete from customer_services where id = #{id}
+	</delete>
+
+	<select id="getUsers" resultType="com.zyc.crm.bean.User">
+		select id,name from users
+	</select>
+
+	<sql id="selectPage">
+
+		<where>
+			service_state = #{serviceState}
+
+			<if test="allotId!=null">
+				and allot_id = #{allotId}
+			</if>
+			<if test="serviceType!=null">
+				and service_type like #{serviceType}
+			</if>
+			<if test="serviceTitle!=null">
+				and service_title like #{serviceTitle}
+			</if>
+			<if test="customerName!=null">
+				and c.name = #{customerName}
+			</if>
+			<if test="createDate1!=null">
+			<![CDATA[
+				and create_date > #{createDate1}
+				]]>
+			</if>
+			<if test="createDate2!=null">
+				<![CDATA[
+				and create_date < #{createDate2}
+				]]>
+			</if>
+		</where>
+	</sql>
+
+	<select id="getContent" resultType="com.zyc.crm.bean.CustomerService">
+
+		select * from (
+		select
+		rownum
+		rn,cs.id,cs.allot_date,cs.service_type,cs.service_title,cs.create_date
+		as
+		"createDate",cs.deal_date,cs.deal_result,cs.satisfy,cs.service_deal,cs.service_request,cs.service_state,cs.allot_id
+		as "allotTo.id",cs.created_id as "createdby.id",cs.customer_id as
+		"customer.id",c.name as "customer.name",u.name as "createdby.name"
+
+		from customer_services cs
+		left outer join
+		customers c
+		on cs.customer_id =
+		c.id
+		left outer join users u
+		on cs.created_id = u.id
+		<include refid="selectPage" />
+		)s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+
+	<!-- 查询一共有多少个元素 -->
+	<select id="getTotalElements" resultType="long">
+		select count(*)
+		from customer_services cs
+		left outer join customers c
+		on
+		cs.customer_id =
+		c.id
+		<include refid="selectPage" />
+	</select>
+
+
+	<!-- 添加一个服务 -->
+	<insert id="save">
+		insert into customer_services
+		(id,service_type,service_title,customer_id,service_state,service_request,created_id,create_date)
+		values(crm_seq.nextval,#{serviceType},#{serviceTitle},#{customer.id},#{serviceState},#{serviceRequest},#{createdby.id},#{createDate})
+	</insert>
+
+	<!-- 获取所有的服务类型 -->
+	<select id="getgetServiceType" resultType="String">
+		select item from dicts
+		where type = '服务类型'
+	</select>
+	<!-- 获取所有的customerName -->
+	<select id="getCusomers" resultType="com.zyc.crm.bean.Customer">
+		select id,name from
+		customers
+	</select>
+</mapper>

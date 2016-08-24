@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ProductMapper">
+
+	<delete id="delete">
+		delete from products where id=#{id}
+	</delete>
+
+	<update id="update">
+		update products set batch=#{batch},memo=#{memo},name=#{name},price=#{price},type=#{type},unit=#{unit}
+		where id=#{id}
+	</update>
+
+	<select id="getProductById" resultType="com.zyc.crm.bean.Product">
+		select id,batch,memo,name,price,type,unit from products where id=#{id}
+	</select>
+
+	<insert id="save">
+		insert into products (id,batch,memo,name,price,type,unit)
+		values(crm_seq.nextval,#{batch},#{memo},#{name},#{price},#{type},#{unit})
+	</insert>
+
+	<sql id="productSql">
+		<where>
+			<if test="batch!=null">
+				batch like #{batch}
+			</if>
+			<if test="name!=null">
+				and name like #{name}
+			</if>
+			<if test="type!=null">
+				and batch like #{type}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getTotalElementsByMap" resultType="long">
+		select count(*)
+		from products
+		<include refid="productSql"/>
+	</select>
+	<select id="getContentByMap" resultType="com.zyc.crm.bean.Product">
+		select * from (
+			select rownum rn,id,batch,memo,name,price,type,unit
+			from products
+			<include refid="productSql"/>
+		) s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+	
+</mapper>

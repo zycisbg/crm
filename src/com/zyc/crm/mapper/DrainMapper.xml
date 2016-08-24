@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.DrainMapper">
+
+	<update id="updateStatus">
+		update customer_drains set status='流失',reason=#{reason},drain_date=#{drainDate} where id=#{id}
+	</update>
+
+	<update id="save">
+		update customer_drains set delay = #{delay} where id=#{drainId}
+	</update>
+	
+	<select id="getCustomerDrainById" resultType="com.zyc.crm.bean.CustomerDrain">
+		select cd.id,delay,drain_date,last_order_date,reason,status,customer_id as "customer.id",cust.name as "customer.name",cont.name as "customer.manager.name"
+		from customer_drains cd
+		left outer join customers cust
+		on cd.customer_id = cust.id
+		left outer join contacts cont
+		on cust.manager_id = cont.id
+		where cd.id = #{id}
+	</select>
+
+	<sql id="drainSql">
+		<where>
+			<if test="customerName!=null">
+				<![CDATA[
+				cust.name like #{customerName}
+				]]>
+			</if>
+			<if test="customerManagerName!=null">
+				<![CDATA[
+				and cont.name like #{customerManagerName}
+				]]>
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getTotalElementsByMap" resultType="long">
+		select count(*)
+		from customer_drains cd
+		left outer join customers cust
+		on cd.customer_id = cust.id
+		left outer join contacts cont
+		on cust.manager_id = cont.id
+		<include refid="drainSql"/>
+	</select>
+	
+	
+	<select id="getContentByMap" resultType="com.zyc.crm.bean.CustomerDrain">
+	
+		select * from (
+			select rownum rn,cd.id,delay,drain_date,last_order_date,reason,status,customer_id as "customer.id",cust.name as "customer.name",cont.name as "customer.manager.name"
+			from customer_drains cd
+			left outer join customers cust
+			on cd.customer_id = cust.id
+			left outer join contacts cont
+			on cust.manager_id = cont.id
+			<include refid="drainSql"/>
+		)s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+		
+	</select>
+</mapper>

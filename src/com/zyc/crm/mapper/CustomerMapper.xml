@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.CustomerMapper">
+
+	<update id="updateStatus">
+		update customers set state='流失' where id =#{customer.id}
+	</update>
+
+	<update id="delete">
+		update customers set state='删除' where id =#{id}
+	</update>
+
+	<update id="update">
+		update customers set
+		address=#{address},bank=#{bank},bank_account=#{bankAccount},bankroll=#{bankroll},
+		chief=#{chief},credit=#{credit},fax=#{fax},licence_no=#{licenceNo},local_tax_no=#{localTaxNo},national_tax_no=#{nationalTaxNo},
+		no=#{no},region=#{region},satify=#{satify},state=#{state},tel=#{tel},turnover=#{turnover},websit=#{websit},zip=#{zip},manager_id=#{manager.id},
+		customer_level=#{level},name=#{name} where id=#{id}
+	</update>
+
+	<select id="getAllContact" resultType="com.zyc.crm.bean.Contact">
+		select id,name from
+		contacts where customer_id=#{id}
+	</select>
+
+	<resultMap type="com.zyc.crm.bean.Customer" id="customerMap">
+		<id column="cust_id" property="id" />
+		<result column="address" property="address" />
+		<result column="bank" property="bank" />
+		<result column="bank_account" property="bankAccount" />
+		<result column="bankroll" property="bankroll" />
+		<result column="chief" property="chief" />
+		<result column="credit" property="credit" />
+		<result column="fax" property="fax" />
+		<result column="licence_no" property="licenceNo" />
+		<result column="local_tax_no" property="localTaxNo" />
+		<result column="cust_name" property="name" />
+		<result column="national_tax_no" property="nationalTaxNo" />
+		<result column="no" property="no" />
+		<result column="region" property="region" />
+		<result column="satify" property="satify" />
+		<result column="state" property="state" />
+		<result column="tel" property="tel" />
+		<result column="turnover" property="turnover" />
+		<result column="websit" property="websit" />
+		<result column="zip" property="zip" />
+		<result column="customer_level" property="level" />
+		<result column="manager_id" property="manager.id" />
+		<association property="manager" javaType="com.zyc.crm.bean.Contact">
+			<id column="manager_id" property="id" />
+			<result column="manager_name" property="name" />
+		</association>
+		<collection property="contacts" ofType="com.zyc.crm.bean.Contact">
+			<id column="contId" property="id" />
+			<result column="contName" property="name" />
+		</collection>
+	</resultMap>
+	<select id="getCustomerById" resultMap="customerMap"> 
+		select
+		cust.id as "cust_id",address,bank,bank_account,bankroll,chief,credit,fax,licence_no,
+		local_tax_no,cust.name as "cust_name",national_tax_no,no,region,satify,state,cust.tel,
+		turnover,websit,zip,manager_id,customer_level,cont.name as "contName",cont.id as "contId",
+		(SELECT innerCont.name FROM contacts innerCont WHERE innerCont.id = cust.manager_id) as "manager_name"
+		from
+		customers cust left outer join contacts cont on cust.id =
+		cont.customer_id
+		where cust.id = #{id}
+	</select>
+
+	<!-- <select id="getCustomerById" resultType="com.zyc.crm.bean.Customer"> 
+		select cust.id,address,bank,bank_account,bankroll,chief,credit,fax,licence_no,local_tax_no,cust.name,national_tax_no,no,region,satify,state,cust.tel,turnover,websit,zip,manager_id 
+		as "manager.id",customer_level as "level",cont.name as "manager.name" from 
+		customers cust left outer join contacts cont on cust.id = cont.customer_id 
+		where cust.id = #{id} </select> -->
+
+	<select id="getSatisfies" resultType="String">
+		select item from dicts
+		where type = '满意度'
+	</select>
+
+	<select id="getCredits" resultType="String">
+		select item from dicts
+		where
+		type = '信用度'
+	</select>
+
+	<select id="getAllLevels" resultType="String">
+		select item from dicts
+		where type = '客户等级'
+	</select>
+
+	<select id="getAllRegions" resultType="String">
+		select item from dicts
+		where type = '地区'
+	</select>
+
+	<select id="getTotalElementsByMap" resultType="long">
+		select count(*)
+		from customers cust
+		left outer join contacts cont
+		on
+		cust.manager_id =cont.id
+		<where>
+			<if test="name!=null">
+			<![CDATA[
+				cust.name like #{name}
+			]]>
+			</if>
+			<if test="manager!=null">
+				<![CDATA[
+				and cont.name like #{manager}
+				]]>
+			</if>
+
+			<if test="region!=null">
+			<![CDATA[
+				and cust.region = #{region}
+				]]>
+			</if>
+			<if test="level!=null">
+			<![CDATA[
+				and cust.customer_level = #{level}
+				]]>
+			</if>
+			<if test="state!=null">
+			<![CDATA[
+				and cust.state = #{state}
+				]]>
+			</if>
+
+		</where>
+	</select>
+
+	<select id="getContentByMap" resultType="com.zyc.crm.bean.Customer">
+
+		select * from(
+		select rownum
+		rn,
+		cust.id,cust.no,cust.name,cust.address,cont.name as
+		"manager.name",cust.customer_level as "level",cust.state,cust.region
+		from
+		customers cust
+		left outer join contacts cont
+		on cust.manager_id
+		=cont.id
+		<where>
+			<if test="name!=null">
+			<![CDATA[
+				cust.name like #{name}
+				]]>
+			</if>
+
+			<if test="manager!=null">
+			<![CDATA[
+				and cont.name like #{manager}
+				]]>
+			</if>
+
+			<if test="region!=null">
+			<![CDATA[
+				and cust.region = #{region}
+			]]>
+			</if>
+
+			<if test="level!=null">
+			<![CDATA[
+				and cust.customer_level = #{level}
+				]]>
+			</if>
+
+			<if test="state!=null">
+			<![CDATA[
+				and cust.state = #{state}
+				]]>
+			</if>
+
+		</where>
+		) s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+</mapper>

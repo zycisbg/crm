@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.RoleMapper">
+
+	<!-- 删除角色的所有权限 -->
+	<delete id="deleteRoleAuth">
+		delete from role_authority
+		where role_id=#{id}
+	</delete>
+
+	<!-- 批量插入 -->
+	<insert id="updateRole">
+		insert into role_authority (role_id, authority_id)
+		<foreach collection="authorities" open="(" close=")" item="auth" separator="union">
+			select #{id},#{auth.id}
+			from dual
+		</foreach>
+	</insert>
+	
+<!-- 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 -->
+	<select id="selectSub" resultType="com.zyc.crm.bean.Authority">
+		select id,name,display_name,permissions,url,parent_authority_id
+		from authorities
+		where parent_authority_id=#{id}
+	</select>
+
+	<resultMap type="com.zyc.crm.bean.Authority" id="authoritiesMap">
+		<id column="id" property="id"/>
+		<result column="display_name" property="displayName"/>
+		<result column="permissions" property="permissions"/>
+		<result column="name" property="name"/>
+		<result column="url" property="url"/>
+		<result column="parent_authority_id" property="parentAuthority.id"/>
+		<collection property="subAuthorities" ofType="com.zyc.crm.bean.Authority" column="id" select="selectSub"></collection>
+	</resultMap>
+
+	<select id="getParentAuthorities" resultMap="authoritiesMap">
+		select id,name,display_name,permissions,url from
+		authorities a where id in (select i.parent_authority_id from
+		authorities i where i.parent_authority_id=a.id )
+	</select>
+
+<!-- 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 查询所有资源包括父资源，子资源 -->
+	<select id="getSubAuthorities" resultType="com.zyc.crm.bean.Authority">
+		select id,name,display_name,permissions,url from
+		authorities a where id not in (select i.parent_authority_id from
+		authorities i where i.parent_authority_id=a.id )
+	</select>
+
+	<!-- <select id="getParentAuthorities" resultType="com.zyc.crm.bean.Authority">
+		select id,name,display_name,permissions,url from
+		authorities a where id in (select i.parent_authority_id from
+		authorities i where i.parent_authority_id=a.id )
+	</select> -->
+	
+<!-- 查询role包含的权限   查询role包含的权限    查询role包含的权限   查询role包含的权限   查询role包含的权限   查询role包含的权限 -->
+	<select id="getAuthorityByRole" resultType="com.zyc.crm.bean.Authority">
+		select a.id,a.name,a.display_name,a.permissions,a.url
+	    from authorities a
+	    left outer join role_authority ra
+	    on a.id = ra.authority_id
+	    left outer join roles r
+	    on r.id = ra.role_id
+	    where r.id=#{id}
+	</select>
+	
+	<resultMap type="com.zyc.crm.bean.Role" id="getRoleMap">
+		<id column="id" property="id"/>
+		<result column="description" property="description"/>
+		<result column="enabled" property="enabled"/>
+		<result column="name" property="name"/>
+		<collection property="authorities" ofType="com.zyc.crm.bean.Authority" column="id" select="getAuthorityByRole"></collection>
+	</resultMap>
+
+	<select id="getRole" resultMap="getRoleMap">
+		select id,description,enabled,name
+		from roles
+		where id=#{id}
+	</select>
+<!-- 查询role包含的权限   查询role包含的权限    查询role包含的权限   查询role包含的权限   查询role包含的权限   查询role包含的权限 -->
+	<delete id="delete">
+		delete from roles where id=#{id}
+	</delete>
+
+	<insert id="save">
+		insert into roles(id,description,enabled,name)
+		values(crm_seq.nextval,#{description},#{enabled},#{name})
+	</insert>
+
+	<select id="getTotalElements" resultType="long">
+		select count(*) from
+		roles
+	</select>
+	<select id="getContent" resultType="com.zyc.crm.bean.Role">
+		select * from (
+		select rownum rn,id,description,enabled,name
+		from roles
+		) r
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+</mapper>

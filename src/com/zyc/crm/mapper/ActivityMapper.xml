@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.ActivityMapper">
+
+	<select id="delete">
+		delete from customer_activities where id=#{activityId}
+	</select>
+
+	<select id="getActivity" resultType="com.zyc.crm.bean.CustomerActivity">
+		select id,activity_date as
+		"date",description,place,title,customer_id as
+		"customer.id"
+		from customer_activities
+		where id=#{id}
+	</select>
+
+	<update id="update">
+		update customer_activities set
+		activity_date=#{date},description=#{description},place=#{place},title=#{title},customer_id=#{customer.id}
+		where id=#{id}
+	</update>
+
+	<insert id="save">
+		insert into
+		customer_activities(id,activity_date,description,place,title,customer_id)
+		values(crm_seq.nextval,#{date},#{description},#{place},#{title},#{customer.id})
+	</insert>
+
+	<select id="getTotalElement" resultType="long">
+		select count(*) from
+		customer_activities where customer_id=#{customerId}
+	</select>
+	<select id="getContent" resultType="com.zyc.crm.bean.CustomerActivity">
+
+		select * from(
+		select rownum rn,id,activity_date as
+		"date",description,place,title,customer_id as
+		"customer.id"
+		from
+		customer_activities
+		where customer_id = #{customerId}
+		) s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+
+
+	</select>
+</mapper>

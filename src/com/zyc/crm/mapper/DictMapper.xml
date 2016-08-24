@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zyc.crm.mapper.DictMapper">
+
+	<delete id="delete">
+		delete from dicts where id=#{id}
+	</delete>
+
+	<update id="update">
+		update dicts set editable=#{editable},item=#{item},type=#{type},value=#{value}
+		where id=#{id}
+	</update>
+
+	<select id="getDictById" resultType="com.zyc.crm.bean.Dict">
+		select id,editable,item,type,value
+		from dicts
+		where id=#{id}
+	</select>
+
+	<insert id="save">
+		insert into dicts (id,editable,item,type,value)
+		values (crm_seq.nextval,#{editable},#{item},#{type},#{value})
+	</insert>
+
+	<sql id="dictSql">
+		<where>
+			<if test="type!=null">
+				type like #{type}
+			</if>
+			<if test="item!=null">
+				and item like #{item}
+			</if>
+			<if test="value!=null">
+				and type like #{value}
+			</if>
+		</where>
+	</sql>
+	<!-- 查询总记录数 -->
+	<select id="getTotalElements" resultType="long">
+		select count(*) from dicts
+		<include refid="dictSql"/>
+	</select>
+	
+	<!-- 查询当前页面的集合 -->
+	<select id="getContent" resultType="com.zyc.crm.bean.Dict">
+		select * from (
+			select rownum rn,id,editable,item,type,value
+			from dicts
+			<include refid="dictSql"/>
+		) s
+		<![CDATA[
+			where rn>=#{fromIndex} and rn<#{endIndex}
+		]]>
+	</select>
+</mapper>
